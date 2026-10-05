@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="pt-PT" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendário Português</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        sepia: {
+                            50: '#fdfbf7',
+                            100: '#f7f2ea',
+                            200: '#efe4d3',
+                            800: '#433422',
+                            900: '#2c2214',
+                        },
+                        portugal: {
+                            green: '#00662b',
+                            red: '#da291c',
+                            gold: '#ffcc00'
+                        }
+                    },
+                    fontFamily: {
+                        serif: ['Georgia', 'Cambria', 'Times New Roman', 'serif'],
+                        sans: ['Inter', 'system-ui', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', Georgia, serif;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* Paper texture aesthetic in light mode */
+        .light body {
+            background-color: #f7f3eb;
+            background-image: radial-gradient(#e2d9cc 0.75px, transparent 0.75px);
+            background-size: 16px 16px;
+            color: #2c2214;
+        }
+
+        /* Modern Dark slate aesthetic */
+        .dark body {
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+
+        .paper-card {
+            box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.04);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 9999px;
+        }
+        .dark ::webkit-scrollbar-thumb {
+            background: #334155;
+        }
+
+        /* PRINT STYLES - Optimized for A4 printing */
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: 1cm;
+            }
+
+            body {
+                background: white !important;
+                color: black !important;
+                font-size: 10pt;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+
+            .print-only {
+                display: block !important;
+            }
+
+            .print-break-inside-avoid {
+                break-inside: avoid;
+            }
+
+            .paper-card {
+                box-shadow: none !important;
+                border: 1px solid #94a3b8 !important;
+                background: white !important;
+            }
+
+            /* Force clean grid borders when printing */
+            .grid-border {
+                border: 1px solid #cbd5e1 !important;
+            }
+            
+            .day-cell {
+                min-height: 4.5rem !important;
+                border: 1px solid #e2e8f0 !important;
+                background: white !important;
+                color: black !important;
+            }
+
+            .holiday-text {
+                color: #991b1b !important;
+                font-weight: 600 !important;
+            }
+
+            /* Override dark mode text color on print */
+            * {
+                color: black !important;
+                text-shadow: none !important;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between antialiased selection:bg-red-200 selection:text-red-900">
+
+    <header class="no-print border-b border-stone-300 dark:border-slate-800 bg-stone-100/80 dark:bg-slate-900/80 backdrop-blur sticky top-0 z-30 transition-colors">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            
+            <!-- Branding -->
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="switchView('year')">
+                <div class="w-9 h-9 rounded-lg bg-red-700 text-white flex items-center justify-center font-serif font-bold text-xl shadow-md border border-green-800">
+                    P
+                </div>
+                <div>
+                    <h1 class="text-lg font-serif font-bold tracking-tight leading-none text-stone-900 dark:text-slate-100">
+                        Calendário Português
+                    </h1>
+                    <span class="text-xs text-stone-500 dark:text-slate-400 font-sans">Tradição & Organização</span>
+                </div>
+            </div>
+
+            <!-- Controls: Year Selector, Print, View Switch, Theme Toggle -->
+            <div class="flex items-center space-x-2 sm:space-x-4">
+                
+                <!-- Year Control -->
+                <div class="flex items-center bg-stone-200 dark:bg-slate-800 rounded-lg p-1 border border-stone-300 dark:border-slate-700">
+                    <button onclick="changeYear(-1)" title="Ano Anterior" class="p-1.5 rounded-md hover:bg-stone-300 dark:hover:bg-slate-700 text-stone-700 dark:text-slate-200 transition">
+                        <i class="fa-solid font-bold fa-chevron-left text-xs"></i>
+                    </button>
+                    <span id="currentYearDisplay" class="px-3 font-serif font-bold text-base sm:text-lg min-w-[4rem] text-center text-stone-800 dark:text-slate-100">
+                        2026
+                    </span>
+                    <button onclick="changeYear(1)" title="Ano Seguinte" class="p-1.5 rounded-md hover:bg-stone-300 dark:hover:bg-slate-700 text-stone-700 dark:text-slate-200 transition">
+                        <i class="fa-solid font-bold fa-chevron-right text-xs"></i>
+                    </button>
+                </div>
+
+                <!-- View Switch Buttons -->
+                <div class="hidden sm:flex bg-stone-200 dark:bg-slate-800 p-1 rounded-lg border border-stone-300 dark:border-slate-700">
+                    <button id="btnViewYear" onclick="switchView('year')" class="px-3 py-1 text-xs font-semibold rounded-md bg-white dark:bg-slate-700 text-stone-900 dark:text-white shadow-sm transition">
+                        Ano Completo
+                    </button>
+                    <button id="btnViewMonth" onclick="switchView('month')" class="px-3 py-1 text-xs font-semibold rounded-md text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white transition">
+                        Mês Detalhado
+                    </button>
+                </div>
+
+                <!-- Print Button -->
+                <button onclick="window.print()" title="Imprimir Calendário" class="p-2 rounded-lg bg-stone-200 dark:bg-slate-800 hover:bg-stone-300 dark:hover:bg-slate-700 text-stone-700 dark:text-slate-200 border border-stone-300 dark:border-slate-700 transition">
+                    <i class="fa-solid fa-print"></i>
+                </button>
+
+                <!-- Theme Toggle Button -->
+                <button id="themeToggle" onclick="toggleTheme()" title="Mudar Tema" class="p-2 rounded-lg bg-stone-200 dark:bg-slate-800 hover:bg-stone-300 dark:hover:bg-slate-700 text-stone-700 dark:text-slate-200 border border-stone-300 dark:border-slate-700 transition">
+                    <i id="themeIcon" class="fa-solid fa-moon"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full">
+        
+        <!-- Printable Header Banner -->
+        <div class="hidden print:block text-center mb-6">
+            <h1 class="text-3xl font-serif font-bold text-black uppercase tracking-wider" id="printHeaderTitle">Calendário 2026</h1>
+            <p class="text-sm text-gray-600 mt-1">República Portuguesa • Feriados Nacionais e Datas Comemorativas</p>
+            <div class="border-b-2 border-black mt-3"></div>
+        </div>
+
+        <!-- ================= YEAR VIEW ================= -->
+        <section id="yearView" class="space-y-6">
+            <!-- Year Header Info -->
+            <div class="no-print flex flex-col sm:flex-row sm:items-center justify-between pb-2 border-b border-stone-300 dark:border-slate-800">
+                <div>
+                    <h2 class="text-2xl font-serif font-bold text-stone-900 dark:text-white flex items-center gap-2">
+                        <span>Ano Civil de</span>
+                        <span id="yearHeading" class="text-red-700 dark:text-red-400">2026</span>
+                    </h2>
+                    <p class="text-xs text-stone-500 dark:text-slate-400">Clique em qualquer mês para abrir a vista detalhada e gerir anotações.</p>
+                </div>
+                <div class="mt-2 sm:mt-0 flex items-center space-x-4 text-xs font-medium">
+                    <span class="flex items-center gap-1.5">
+                        <span class="w-3 h-3 rounded-full bg-red-600 inline-block"></span>
+                        <span class="text-stone-700 dark:text-slate-300">Feriado Nacional</span>
+                    </span>
+                    <span class="flex items-center gap-1.5">
+                        <span class="w-3 h-3 rounded-full bg-amber-500 inline-block"></span>
+                        <span class="text-stone-700 dark:text-slate-300">Facultativo / Regional</span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- 12 Months Grid -->
+            <div id="yearGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <!-- Javascript will inject 12 mini months here -->
+            </div>
+        </section>
+
+        <!-- ================= DETAILED MONTH VIEW ================= -->
+        <section id="monthView" class="hidden space-y-6">
+            <!-- Navigation Header for Single Month -->
+            <div class="no-print flex flex-wrap items-center justify-between gap-4 bg-stone-100 dark:bg-slate-800/80 p-4 rounded-xl border border-stone-300 dark:border-slate-700">
+                <button onclick="switchView('year')" class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg bg-white dark:bg-slate-700 text-stone-700 dark:text-slate-200 shadow-sm border border-stone-200 dark:border-slate-600 hover:bg-stone-50 dark:hover:bg-slate-600 transition">
+                    <i class="fa-solid fa-arrow-left text-xs"></i>
+                    <span>Voltar ao Ano</span>
+                </button>
+
+                <div class="flex items-center space-x-3">
+                    <button onclick="navigateMonth(-1)" class="p-2 rounded-lg bg-white dark:bg-slate-700 text-stone-700 dark:text-slate-200 shadow-sm border border-stone-200 dark:border-slate-600 hover:bg-stone-50 dark:hover:bg-slate-600 transition">
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </button>
+                    <h2 id="monthDetailTitle" class="text-xl sm:text-2xl font-serif font-bold min-w-[12rem] text-center text-stone-900 dark:text-white">
+                        Janeiro 2026
+                    </h2>
+                    <button onclick="navigateMonth(1)" class="p-2 rounded-lg bg-white dark:bg-slate-700 text-stone-700 dark:text-slate-200 shadow-sm border border-stone-200 dark:border-slate-600 hover:bg-stone-50 dark:hover:bg-slate-600 transition">
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+                </div>
+
+                <div class="text-xs text-stone-500 dark:text-slate-400 hidden lg:block">
+                    Dica: Clique num dia para adicionar notas pessoais.
+                </div>
+            </div>
+
+            <!-- Full-Size Month Grid Box -->
+            <div class="paper-card bg-white dark:bg-slate-900 rounded-xl border border-stone-300 dark:border-slate-800 overflow-hidden">
+                <!-- Day Names Header -->
+                <div class="grid grid-cols-7 bg-stone-100 dark:bg-slate-800/90 border-b border-stone-300 dark:border-slate-700 text-center font-serif font-semibold text-stone-700 dark:text-slate-300 text-sm py-3">
+                    <div class="text-red-700 dark:text-red-400">Seg</div>
+                    <div>Ter</div>
+                    <div>Qua</div>
+                    <div>Qui</div>
+                    <div>Sex</div>
+                    <div class="text-stone-500 dark:text-slate-400">Sáb</div>
+                    <div class="text-red-600 dark:text-red-400">Dom</div>
+                </div>
+
+                <!-- Days Matrix -->
+                <div id="monthDetailGrid" class="grid grid-cols-7 divide-x divide-y divide-stone-200 dark:divide-slate-800 border-b border-stone-200 dark:border-slate-800">
+                    <!-- Javascript dynamically populates full month cells -->
+                </div>
+            </div>
+
+            <!-- Holidays list for the selected month -->
+            <div class="paper-card bg-stone-50 dark:bg-slate-800/50 rounded-xl p-4 border border-stone-200 dark:border-slate-700/60">
+                <h3 class="font-serif font-bold text-base text-stone-900 dark:text-slate-100 mb-2 flex items-center gap-2">
+                    <i class="fa-solid fa-flag text-red-600"></i>
+                    <span>Feriados e Efemérides deste Mês</span>
+                </h3>
+                <ul id="monthHolidaysList" class="text-sm space-y-1.5 text-stone-700 dark:text-slate-300">
+                    <!-- Populated dynamically -->
+                </ul>
+            </div>
+        </section>
+
+    </main>
+
+    <div id="noteModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm hidden no-print">
+        <div class="bg-white dark:bg-slate-900 rounded-xl max-w-md w-full p-6 shadow-2xl border border-stone-300 dark:border-slate-700 transform transition-all">
+            <div class="flex items-center justify-between pb-3 border-b border-stone-200 dark:border-slate-800">
+                <h3 id="modalDateTitle" class="font-serif font-bold text-lg text-stone-900 dark:text-white">
+                    Anotação para dia
+                </h3>
+                <button onclick="closeModal()" class="text-stone-400 hover:text-stone-600 dark:hover:text-slate-200">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div class="mt-4">
+                <label for="noteInput" class="block text-xs font-semibold uppercase text-stone-500 dark:text-slate-400 mb-2">
+                    Nota Pessoal / Lembrete
+                </label>
+                <textarea id="noteInput" rows="4" class="w-full px-3 py-2 rounded-lg border border-stone-300 dark:border-slate-700 bg-stone-50 dark:bg-slate-800 text-stone-900 dark:text-slate-100 focus:ring-2 focus:ring-red-600 outline-none text-sm" placeholder="Escreva aqui os seus compromissos..."></textarea>
+            </div>
+            <div id="modalHolidayInfo" class="mt-3 p-2.5 rounded-lg bg-red-50 dark:bg-red-950/40 text-red-800 dark:text-red-300 text-xs hidden border border-red-200 dark:border-red-900">
+                <i class="fa-solid fa-star mr-1"></i> <span id="modalHolidayName"></span>
+            </div>
+            <div class="mt-6 flex justify-between items-center">
+                <button onclick="deleteNote()" id="btnDeleteNote" class="px-3 py-1.5 text-xs font-semibold text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition hidden">
+                    <i class="fa-solid fa-trash mr-1"></i> Apagar
+                </button>
+                <div class="flex space-x-2 ml-auto">
+                    <button onclick="closeModal()" class="px-4 py-2 text-xs font-semibold rounded-lg text-stone-600 dark:text-slate-300 hover:bg-stone-100 dark:hover:bg-slate-800 transition">
+                        Cancelar
+                    </button>
+                    <button onclick="saveNote()" class="px-4 py-2 text-xs font-semibold rounded-lg bg-red-700 hover:bg-red-800 text-white shadow transition">
+                        Guardar Nota
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="no-print border-t border-stone-300 dark:border-slate-800 bg-stone-100/50 dark:bg-slate-900/50 py-4 mt-8 transition-colors">
+        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-stone-500 dark:text-slate-500">
+            <p>Calendário Tradicional Português com Feriados Nacionais Oficiais em PT-PT. Compatível com impressão A4.</p>
+        </div>
+    </footer>
+
+    <script>
+        // State variables
+        let currentYear = new Date().getFullYear();
+        let selectedMonth = new Date().getMonth(); // 0-11
+        let currentView = 'year'; // 'year' | 'month'
+        let activeModalDateStr = null; // YYYY-MM-DD
+        let notesData = {};
+
+        const MONTH_NAMES_PT = [
+            "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+            "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+        ];
+
+        const WEEKDAY_INITIALS = ["S", "T", "Q", "Q", "S", "S", "D"];
+
+        // Initialize App
+        window.addEventListener('DOMContentLoaded', () => {
+            loadNotesFromStorage();
+            initTheme();
+            render();
+        });
+
+        // Theme Handling
+        function initTheme() {
+            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+                document.documentElement.classList.remove('light');
+                updateThemeIcon(true);
+            } else {
+                document.documentElement.classList.remove('dark');
+                document.documentElement.classList.add('light');
+                updateThemeIcon(false);
+            }
+        }
+
+        function toggleTheme() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            document.documentElement.classList.toggle('light', !isDark);
+            localStorage.theme = isDark ? 'dark' : 'light';
+            updateThemeIcon(isDark);
+        }
+
+        function updateThemeIcon(isDark) {
+            const icon = document.getElementById('themeIcon');
+            if (isDark) {
+                icon.className = 'fa-solid fa-sun text-amber-400';
+            } else {
+                icon.className = 'fa-solid fa-moon text-stone-700';
+            }
+        }
+
+        // View Switcher
+        function switchView(view) {
+            currentView = view;
+            const yearSec = document.getElementById('yearView');
+            const monthSec = document.getElementById('monthView');
+            const btnY = document.getElementById('btnViewYear');
+            const btnM = document.getElementById('btnViewMonth');
+
+            if (view === 'year') {
+                yearSec.classList.remove('hidden');
+                monthSec.classList.add('hidden');
+                btnY.className = "px-3 py-1 text-xs font-semibold rounded-md bg-white dark:bg-slate-700 text-stone-900 dark:text-white shadow-sm transition";
+                btnM.className = "px-3 py-1 text-xs font-semibold rounded-md text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white transition";
+            } else {
+                yearSec.classList.add('hidden');
+                monthSec.classList.remove('hidden');
+                btnM.className = "px-3 py-1 text-xs font-semibold rounded-md bg-white dark:bg-slate-700 text-stone-900 dark:text-white shadow-sm transition";
+                btnY.className = "px-3 py-1 text-xs font-semibold rounded-md text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white transition";
+            }
+            render();
+        }
+
+        function changeYear(delta) {
+            currentYear += delta;
+            render();
+        }
+
+        function navigateMonth(delta) {
+            selectedMonth += delta;
+            if (selectedMonth < 0) {
+                selectedMonth = 11;
+                currentYear--;
+            } else if (selectedMonth > 11) {
+                selectedMonth = 0;
+                currentYear++;
+            }
+            render();
+        }
+
+        function openMonthDetail(monthIdx) {
+            selectedMonth = monthIdx;
+            switchView('month');
+        }
+
+        // Astronomical calculation of Easter Sunday (Meeus/Jones/Butcher algorithm)
+        function getEasterSunday(year) {
+            const a = year % 19;
+            const b = Math.floor(year / 100);
+            const c = year % 100;
+            const d = Math.floor(b / 4);
+            const e = b % 4;
+            const f = Math.floor((b + 8) / 25);
+            const g = Math.floor((b - f + 1) / 3);
+            const h = (19 * a + b - d - g + 15) % 30;
+            const i = Math.floor(c / 4);
+            const k = c % 4;
+            const l = (32 + 2 * e + 2 * i - h - k) % 7;
+            const m = Math.floor((a + 11 * h + 22 * l) / 451);
+            const month = Math.floor((h + l - 7 * m + 114) / 31) - 1; // 0-indexed month
+            const day = ((h + l - 7 * m + 114) % 31) + 1;
+            return new Date(year, month, day);
+        }
+
+        // Compute Portuguese National & Dynamic Holidays
+        function getPortugueseHolidays(year) {
+            const holidays = {}; // key: "MM-DD", value: { name, type: 'national'|'optional' }
+
+            function addH(dateObj, name, type = 'national') {
+                const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+                const d = String(dateObj.getDate()).padStart(2, '0');
+                holidays[`${m}-${d}`] = { name, type };
+            }
+
+            // Fixed National Holidays
+            addH(new Date(year, 0, 1), "Ano Novo");
+            addH(new Date(year, 3, 25), "Dia da Liberdade");
+            addH(new Date(year, 4, 1), "Dia do Trabalhador");
+            addH(new Date(year, 5, 10), "Dia de Portugal");
+            addH(new Date(year, 7, 15), "Assunção de Nossa Senhora");
+            addH(new Date(year, 9, 5), "Implantação da República");
+            addH(new Date(year, 10, 1), "Dia de Todos os Santos");
+            addH(new Date(year, 11, 1), "Restauração da Independência");
+            addH(new Date(year, 11, 8), "Imaculada Conceição");
+            addH(new Date(year, 11, 25), "Natal");
+
+            // Dynamic Easter-based Holidays
+            const easter = getEasterSunday(year);
+
+            // Sexta-feira Santa (Good Friday = Easter - 2 days)
+            const goodFriday = new Date(easter);
+            goodFriday.setDate(easter.getDate() - 2);
+            addH(goodFriday, "Sexta-feira Santa");
+
+            // Domingo de Páscoa (Easter Sunday)
+            addH(easter, "Domingo de Páscoa");
+
+            // Corpo de Deus (Corpus Christi = Easter + 60 days)
+            const corpusChristi = new Date(easter);
+            corpusChristi.setDate(easter.getDate() + 60);
+            addH(corpusChristi, "Corpo de Deus");
+
+            // Carnaval (Carnival Tuesday = Easter - 47 days) [Facultativo]
+            const carnival = new Date(easter);
+            carnival.setDate(easter.getDate() - 47);
+            addH(carnival, "Carnaval (Facultativo)", "optional");
+
+            return holidays;
+        }
+
+        // Render Routing
+        function render() {
+            document.getElementById('currentYearDisplay').innerText = currentYear;
+            document.getElementById('yearHeading').innerText = currentYear;
+            document.getElementById('printHeaderTitle').innerText = `Calendário ${currentYear}`;
+
+            const holidaysMap = getPortugueseHolidays(currentYear);
+
+            if (currentView === 'year') {
+                renderYearGrid(holidaysMap);
+            } else {
+                renderMonthDetail(holidaysMap);
+            }
+        }
+
+        function renderYearGrid(holidaysMap) {
+            const container = document.getElementById('yearGrid');
+            container.innerHTML = '';
+
+            const today = new Date();
+
+            for (let m = 0; m < 12; m++) {
+                const monthCard = document.createElement('div');
+                monthCard.className = "paper-card bg-white dark:bg-slate-900 rounded-xl p-4 border border-stone-300 dark:border-slate-800 transition hover:border-red-600/50 cursor-pointer print-break-inside-avoid flex flex-col justify-between";
+                monthCard.onclick = () => openMonthDetail(m);
+
+                // Month Title Header
+                let monthHtml = `
+                    <div>
+                        <div class="flex justify-between items-center border-b border-stone-200 dark:border-slate-800 pb-2 mb-3">
+                            <h3 class="font-serif font-bold text-lg text-stone-900 dark:text-slate-100">${MONTH_NAMES_PT[m]}</h3>
+                            <span class="text-xs font-sans text-stone-400 uppercase tracking-widest">${m + 1}</span>
+                        </div>
+                        
+                        <!-- Day initials -->
+                        <div class="grid grid-cols-7 text-center font-semibold text-[10px] text-stone-400 mb-1">
+                            <span class="text-red-700 dark:text-red-400">S</span>
+                            <span>T</span><span>Q</span><span>Q</span><span>S</span>
+                            <span class="text-stone-400">S</span>
+                            <span class="text-red-600 dark:text-red-400">D</span>
+                        </div>
+                        
+                        <!-- Days Grid -->
+                        <div class="grid grid-cols-7 text-center text-xs gap-y-1">
+                `;
+
+                // Calculate days logic
+                const firstDayIdx = (new Date(currentYear, m, 1).getDay() + 6) % 7; // Monday = 0
+                const daysInMonth = new Date(currentYear, m + 1, 0).getDate();
+
+                // Empty leading cells
+                for (let i = 0; i < firstDayIdx; i++) {
+                    monthHtml += `<span class="py-0.5 text-transparent">.</span>`;
+                }
+
+                // Month Days
+                for (let d = 1; d <= daysInMonth; d++) {
+                    const monthStr = String(m + 1).padStart(2, '0');
+                    const dayStr = String(d).padStart(2, '0');
+                    const key = `${monthStr}-${dayStr}`;
+                    const fullDateStr = `${currentYear}-${monthStr}-${dayStr}`;
+                    const holiday = holidaysMap[key];
+
+                    const isToday = (today.getFullYear() === currentYear && today.getMonth() === m && today.getDate() === d);
+                    const hasNote = !!notesData[fullDateStr];
+
+                    let dayClasses = "py-0.5 rounded-full inline-block text-xs font-medium relative transition-colors ";
+                    let textColor = "text-stone-800 dark:text-slate-200";
+
+                    // Day index 0: Mon, 5: Sat, 6: Sun
+                    const dayOfWeek = (firstDayIdx + d - 1) % 7;
+                    if (dayOfWeek === 6) textColor = "text-red-600 dark:text-red-400 font-semibold"; // Sunday
+
+                    if (holiday) {
+                        if (holiday.type === 'national') {
+                            dayClasses += " bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-300 font-bold ";
+                        } else {
+                            dayClasses += " bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 font-bold ";
+                        }
+                    } else if (isToday) {
+                        dayClasses += " bg-stone-900 text-white dark:bg-slate-100 dark:text-slate-900 font-bold ring-2 ring-red-600 ";
+                    } else {
+                        dayClasses += ` ${textColor} hover:bg-stone-100 dark:hover:bg-slate-800`;
+                    }
+
+                    monthHtml += `
+                        <div class="flex flex-col items-center justify-center">
+                            <span class="${dayClasses} w-6 h-6 flex items-center justify-center">
+                                ${d}
+                                ${hasNote ? '<span class="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-blue-600 rounded-full"></span>' : ''}
+                            </span>
+                        </div>
+                    `;
+                }
+
+                monthHtml += `
+                        </div>
+                    </div>
+                `;
+
+                // Quick Holidays Summary Footer in mini card
+                const monthHolidays = Object.keys(holidaysMap)
+                    .filter(k => k.startsWith(String(m + 1).padStart(2, '0')))
+                    .map(k => holidaysMap[k].name);
+
+                if (monthHolidays.length > 0) {
+                    monthHtml += `
+                        <div class="mt-3 pt-2 border-t border-stone-100 dark:border-slate-800 text-[10px] text-stone-500 dark:text-slate-400 truncate">
+                            <i class="fa-solid fa-flag text-red-600 mr-1"></i> ${monthHolidays.join(', ')}
+                        </div>
+                    `;
+                }
+
+                monthCard.innerHTML = monthHtml;
+                container.appendChild(monthCard);
+            }
+        }
+
+        function renderMonthDetail(holidaysMap) {
+            document.getElementById('monthDetailTitle').innerText = `${MONTH_NAMES_PT[selectedMonth]} ${currentYear}`;
+            const grid = document.getElementById('monthDetailGrid');
+            grid.innerHTML = '';
+
+            const today = new Date();
+            const firstDayIdx = (new Date(currentYear, selectedMonth, 1).getDay() + 6) % 7;
+            const daysInMonth = new Date(currentYear, selectedMonth + 1, 0).getDate();
+            const prevMonthDays = new Date(currentYear, selectedMonth, 0).getDate();
+
+            // Previous Month's trailing days
+            for (let i = firstDayIdx - 1; i >= 0; i--) {
+                const prevDay = prevMonthDays - i;
+                grid.appendChild(createEmptyCell(prevDay));
+            }
+
+            // Current Month Days
+            for (let d = 1; d <= daysInMonth; d++) {
+                const monthStr = String(selectedMonth + 1).padStart(2, '0');
+                const dayStr = String(d).padStart(2, '0');
+                const key = `${monthStr}-${dayStr}`;
+                const fullDateStr = `${currentYear}-${monthStr}-${dayStr}`;
+                const holiday = holidaysMap[key];
+                const dayOfWeek = (firstDayIdx + d - 1) % 7;
+                const isToday = (today.getFullYear() === currentYear && today.getMonth() === selectedMonth && today.getDate() === d);
+                const note = notesData[fullDateStr];
+
+                const cell = document.createElement('div');
+                cell.className = "day-cell min-h-[5.5rem] sm:min-h-[7rem] p-2 flex flex-col justify-between bg-white dark:bg-slate-900 transition hover:bg-stone-50 dark:hover:bg-slate-800/60 cursor-pointer group";
+                cell.onclick = () => openNoteModal(fullDateStr, d, holiday);
+
+                let headerClasses = "text-sm font-bold w-7 h-7 rounded-full flex items-center justify-center ";
+                if (isToday) {
+                    headerClasses += "bg-red-700 text-white shadow";
+                } else if (holiday) {
+                    headerClasses += "text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/50";
+                } else if (dayOfWeek === 6) {
+                    headerClasses += "text-red-600 dark:text-red-400";
+                } else {
+                    headerClasses += "text-stone-800 dark:text-slate-200";
+                }
+
+                let cellHtml = `
+                    <div class="flex justify-between items-start">
+                        <span class="${headerClasses}">${d}</span>
+                        ${note ? '<i class="fa-solid fa-note-sticky text-amber-500 text-xs"></i>' : ''}
+                    </div>
+                `;
+
+                // Holiday Label inside Cell
+                if (holiday) {
+                    const badgeBg = holiday.type === 'national' 
+                        ? 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200 border-red-200 dark:border-red-800' 
+                        : 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-200 border-amber-200 dark:border-amber-800';
+
+                    cellHtml += `
+                        <div class="mt-1 text-[10px] sm:text-xs p-1 rounded border ${badgeBg} font-medium leading-tight holiday-text">
+                            ${holiday.name}
+                        </div>
+                    `;
+                }
+
+                // Personal Note snippet inside Cell
+                if (note) {
+                    cellHtml += `
+                        <div class="mt-1 text-[11px] text-stone-600 dark:text-slate-300 italic truncate bg-stone-100 dark:bg-slate-800 p-1 rounded border border-stone-200 dark:border-slate-700">
+                            "${note}"
+                        </div>
+                    `;
+                }
+
+                cellHtml += `<div class="mt-auto"></div>`;
+                cell.innerHTML = cellHtml;
+                grid.appendChild(cell);
+            }
+
+            // Next Month's leading days to complete full 7-col grid
+            const totalCellsSoFar = firstDayIdx + daysInMonth;
+            const remainingCells = (7 - (totalCellsSoFar % 7)) % 7;
+            for (let i = 1; i <= remainingCells; i++) {
+                grid.appendChild(createEmptyCell(i));
+            }
+
+            // Populate Holiday List under month
+            const holidaysListEl = document.getElementById('monthHolidaysList');
+            holidaysListEl.innerHTML = '';
+            
+            const monthHolidaysKeys = Object.keys(holidaysMap)
+                .filter(k => k.startsWith(String(selectedMonth + 1).padStart(2, '0')))
+                .sort();
+
+            if (monthHolidaysKeys.length === 0) {
+                holidaysListEl.innerHTML = `<li class="text-stone-400 italic">Sem feriados registados para este mês.</li>`;
+            } else {
+                monthHolidaysKeys.forEach(key => {
+                    const dayNum = parseInt(key.split('-')[1]);
+                    const hInfo = holidaysMap[key];
+                    const li = document.createElement('li');
+                    li.className = "flex items-center gap-2";
+                    li.innerHTML = `
+                        <span class="font-bold text-red-700 dark:text-red-400 w-6">${dayNum}</span>
+                        <span class="font-medium text-stone-800 dark:text-slate-200">${hInfo.name}</span>
+                        ${hInfo.type === 'optional' ? '<span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">Facultativo</span>' : ''}
+                    `;
+                    holidaysListEl.appendChild(li);
+                });
+            }
+        }
+
+        function createEmptyCell(dayNum) {
+            const cell = document.createElement('div');
+            cell.className = "min-h-[5.5rem] sm:min-h-[7rem] p-2 bg-stone-50/50 dark:bg-slate-900/30 text-stone-300 dark:text-slate-700 text-xs font-semibold select-none";
+            cell.innerHTML = `<span>${dayNum}</span>`;
+            return cell;
+        }
+
+        function openNoteModal(dateStr, dayNum, holiday) {
+            activeModalDateStr = dateStr;
+            const modal = document.getElementById('noteModal');
+            const title = document.getElementById('modalDateTitle');
+            const input = document.getElementById('noteInput');
+            const holidayInfo = document.getElementById('modalHolidayInfo');
+            const holidayName = document.getElementById('modalHolidayName');
+            const btnDelete = document.getElementById('btnDeleteNote');
+
+            title.innerText = `Anotação: ${dayNum} de ${MONTH_NAMES_PT[selectedMonth]} de ${currentYear}`;
+            input.value = notesData[dateStr] || '';
+
+            if (holiday) {
+                holidayInfo.classList.remove('hidden');
+                holidayName.innerText = holiday.name;
+            } else {
+                holidayInfo.classList.add('hidden');
+            }
+
+            if (notesData[dateStr]) {
+                btnDelete.classList.remove('hidden');
+            } else {
+                btnDelete.classList.add('hidden');
+            }
+
+            modal.classList.remove('hidden');
+            input.focus();
+        }
+
+        function closeModal() {
+            document.getElementById('noteModal').classList.add('hidden');
+            activeModalDateStr = null;
+        }
+
+        function saveNote() {
+            if (!activeModalDateStr) return;
+            const text = document.getElementById('noteInput').value.trim();
+            
+            if (text) {
+                notesData[activeModalDateStr] = text;
+            } else {
+                delete notesData[activeModalDateStr];
+            }
+
+            saveNotesToStorage();
+            closeModal();
+            render();
+        }
+
+        function deleteNote() {
+            if (!activeModalDateStr) return;
+            delete notesData[activeModalDateStr];
+            saveNotesToStorage();
+            closeModal();
+            render();
+        }
+
+        function saveNotesToStorage() {
+            try {
+                localStorage.setItem('pt_calendar_notes', JSON.stringify(notesData));
+            } catch (e) {
+                console.error("Não foi possível guardar as notas localmente.", e);
+            }
+        }
+
+        function loadNotesFromStorage() {
+            try {
+                const stored = localStorage.getItem('pt_calendar_notes');
+                if (stored) {
+                    notesData = JSON.parse(stored);
+                }
+            } catch (e) {
+                notesData = {};
+            }
+        }
+    </script>
+</body>
+</html>
