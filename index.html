@@ -492,7 +492,13 @@
         function render() {
             document.getElementById('currentYearDisplay').innerText = currentYear;
             document.getElementById('yearHeading').innerText = currentYear;
-            document.getElementById('printHeaderTitle').innerText = `Calendário ${currentYear}`;
+
+            // Dynamically update printable header title based on active view
+            if (currentView === 'month') {
+                document.getElementById('printHeaderTitle').innerText = `${MONTH_NAMES_PT[selectedMonth]} ${currentYear}`;
+            } else {
+                document.getElementById('printHeaderTitle').innerText = `Calendário ${currentYear}`;
+            }
 
             const holidaysMap = getPortugueseHolidays(currentYear);
 
